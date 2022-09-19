@@ -5,8 +5,8 @@
   "description": "a simple book directory",
   "main": "app.js",
   "scripts": {
-    "start": "node app.js",
-    "dev": "nodemon app.js",
+    "start": "node index.js",
+    "dev": "nodemon index.js",
     "test": "jest"
   },
   "author": "Precious Abubakar <preciousdanabubakar@gmail.com> (http://thepda.tech)",
