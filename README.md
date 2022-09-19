@@ -6,9 +6,14 @@ Establish the following routes using the specified method:
     - CreateUser - POST
     - AuthenticateUser - POST
     - getAllUsers - GET
-- Books:
+- Books
     - Create - POST
     - Delete - DELETE
     - LoanOut - POST
     - Return - POST
     - Update - PUT
+
+## Tools
+- Vanilla nodeJs(no framework)
+- Jest
+- Supertest
