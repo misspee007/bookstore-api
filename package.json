@@ -1,0 +1,19 @@
+{
+  "name": "bookstore",
+  "private": true,
+  "version": "1.0.0",
+  "description": "a simple book directory",
+  "main": "app.js",
+  "scripts": {
+    "start": "node app.js",
+    "dev": "nodemon app.js",
+    "test": "jest"
+  },
+  "author": "Precious Abubakar <preciousdanabubakar@gmail.com> (http://thepda.tech)",
+  "license": "ISC",
+  "devDependencies": {
+    "jest": "^29.0.3",
+    "nodemon": "^2.0.20",
+    "supertest": "^6.2.4"
+  }
+}
