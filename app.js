@@ -1,4 +1,5 @@
 const http = require("http");
+const fsPromises = require("fs/promises");
 const fs = require("fs");
 const path = require("path");
 
@@ -12,15 +13,14 @@ function requestHandler(req, res) {
 		getAllBooks(req, res);
 	} else if (req.url === "/books" && req.method === "POST") {
 		// Add a book => POST
-		// addBook(req, res);
+		addBook(req, res);
 	} else if (req.url === "/books" && req.method === "PUT") {
 		// Update book => PUT
 		// updateBook(req, res);
 	} else if (req.url === "/books" && req.method === "DELETE") {
 		// Delete book => DELETE
 		// deleteBook(req, res);
-	}
-	else {
+	} else {
 		res.statusCode = 404;
 		res.end("Not Found");
 	}
@@ -28,13 +28,52 @@ function requestHandler(req, res) {
 	// Return => POST
 }
 
-function getAllBooks(req, res) {
-	const books = fs.readFileSync(pathToBooksDb, "utf8", "r");
-	res.writeHead(200);
-	res.end(books);
+async function getAllBooks(req, res) {
+	try {
+		const books = await fsPromises.readFile(pathToBooksDb, "utf8");
+		res.writeHead(200);
+		res.end(books);
+	} catch (error) {
+		console.log(error);
+	}
 }
 
+function addBook(req, res) {
+	const body = [];
+	req.on("data", (chunk) => {
+		body.push(chunk);
+	});
 
+	req.on("end", async () => {
+		try {
+			// concatenate raw data into a single buffer string
+			const parsedBody = Buffer.concat(body).toString();
+			// parse the buffer string into a JSON object
+			let newBook = JSON.parse(parsedBody);
+
+			// get ID of last book in the database
+			const lastBook = booksDb[booksDb.length - 1];
+			const lastBookId = lastBook.id;
+			newBook.id = lastBookId + 1;
+
+			//save to db
+			booksDb.push(newBook);
+
+			await fsPromises.writeFile(pathToBooksDb, JSON.stringify(booksDb));
+
+			res.writeHead(200);
+			res.end(JSON.stringify(newBook));
+		} catch (err) {
+			console.log(err);
+			res.writeHead(500);
+			res.end(
+				JSON.stringify({
+					message: "Internal Server Error. Could not save book to database.",
+				})
+			);
+		}
+	});
+}
 
 const server = http.createServer(requestHandler);
 
