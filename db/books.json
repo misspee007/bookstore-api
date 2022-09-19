@@ -17,11 +17,16 @@
 		"year": 2016,
 		"id": 3
 	},
-	{ "title": "Americanah", "author": "CNA", "year": 2020, "id": 5 },
+	{
+		"title": "Americanah",
+		"author": "Chimamanda Ngozi Adichie",
+		"year": 2006,
+		"id": 5
+	},
 	{
 		"title": "Things fall apart",
 		"author": "Chinua Achebe",
-		"year": 2020,
+		"year": 1958,
 		"id": 6
 	}
 ]

@@ -2,6 +2,7 @@ const http = require("http");
 const fsPromises = require("fs/promises");
 const fs = require("fs");
 const path = require("path");
+const { error } = require("console");
 
 const pathToBooksDb = path.join(__dirname, "db", "books.json");
 
@@ -16,7 +17,7 @@ function requestHandler(req, res) {
 		addBook(req, res);
 	} else if (req.url === "/books" && req.method === "PUT") {
 		// Update book => PUT
-		// updateBook(req, res);
+		updateBook(req, res);
 	} else if (req.url === "/books" && req.method === "DELETE") {
 		// Delete book => DELETE
 		// deleteBook(req, res);
@@ -61,7 +62,7 @@ function addBook(req, res) {
 
 			await fsPromises.writeFile(pathToBooksDb, JSON.stringify(booksDb));
 
-			res.writeHead(200);
+			res.writeHead(201);
 			res.end(JSON.stringify(newBook));
 		} catch (err) {
 			console.log(err);
@@ -74,6 +75,53 @@ function addBook(req, res) {
 		}
 	});
 }
+
+function updateBook(req, res) {
+	const body = [];
+	req.on("data", (chunk) => {
+		body.push(chunk);
+	});
+
+	req.on("end", async () => {
+		try {
+			const parsedBody = Buffer.concat(body).toString();
+			const bookUpdate = JSON.parse(parsedBody);
+
+      console.log(bookUpdate);
+
+			// get book by id
+			const updatedBookId = booksDb.findIndex(
+				(book) => book.id === bookUpdate.id
+			);
+
+      if (updatedBookId === -1) {
+        res.writeHead(400);
+        res.end("Book not found. Please enter a valid id");
+        return
+      }
+
+			// update book
+			const updatedBook = { ...booksDb[updatedBookId], ...bookUpdate };
+			booksDb[updatedBookId] = updatedBook;
+
+			// save updated book to db
+			await fsPromises.writeFile(pathToBooksDb, JSON.stringify(booksDb));
+
+			res.writeHead(201);
+			res.end(JSON.stringify(updatedBook));
+		} catch (err) {
+			console.log(err);
+			res.writeHead(500);
+			res.end(
+				JSON.stringify({
+					message: "Internal Server Error. Could not save book to database.",
+				})
+			);
+		}
+	});
+}
+
+
 
 const server = http.createServer(requestHandler);
 
