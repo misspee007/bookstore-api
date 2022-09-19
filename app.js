@@ -20,7 +20,7 @@ function requestHandler(req, res) {
 		updateBook(req, res);
 	} else if (req.url === "/books" && req.method === "DELETE") {
 		// Delete book => DELETE
-		// deleteBook(req, res);
+		deleteBook(req, res);
 	} else {
 		res.statusCode = 404;
 		res.end("Not Found");
@@ -47,10 +47,7 @@ function addBook(req, res) {
 
 	req.on("end", async () => {
 		try {
-			// concatenate raw data into a single buffer string
-			const parsedBody = Buffer.concat(body).toString();
-			// parse the buffer string into a JSON object
-			let newBook = JSON.parse(parsedBody);
+			let newBook = parseBody(body);
 
 			// get ID of last book in the database
 			const lastBook = booksDb[booksDb.length - 1];
@@ -84,21 +81,18 @@ function updateBook(req, res) {
 
 	req.on("end", async () => {
 		try {
-			const parsedBody = Buffer.concat(body).toString();
-			const bookUpdate = JSON.parse(parsedBody);
-
-      console.log(bookUpdate);
+			const bookUpdate = parseBody(body);
 
 			// get book by id
 			const updatedBookId = booksDb.findIndex(
 				(book) => book.id === bookUpdate.id
 			);
 
-      if (updatedBookId === -1) {
-        res.writeHead(400);
-        res.end("Book not found. Please enter a valid id");
-        return
-      }
+			if (updatedBookId === -1) {
+				res.writeHead(400);
+				res.end("Book not found. Please enter a valid id");
+				return;
+			}
 
 			// update book
 			const updatedBook = { ...booksDb[updatedBookId], ...bookUpdate };
@@ -121,7 +115,51 @@ function updateBook(req, res) {
 	});
 }
 
+function deleteBook(req, res) {
+	let body = [];
+	req.on("data", (chunk) => {
+		body.push(chunk);
+	});
 
+	req.on("end", async () => {
+		try {
+			// get book by id
+			const bookId = parseBody(body);
+			const bookToDelete = booksDb.findIndex((book) => book.id === bookId.id);
+
+			if (bookToDelete === -1) {
+				res.writeHead(400);
+				res.end("Book not found. Please enter a valid id");
+				return;
+			}
+
+			// delete from db
+			booksDb.splice(bookToDelete, 1);
+
+			// update db
+			await fsPromises.writeFile(pathToBooksDb, JSON.stringify(booksDb));
+			res.writeHead(201);
+			res.end(`Deleted successfully: ${booksDb[bookToDelete].title}`);
+		} catch (err) {
+			console.log(err);
+			res.writeHead(500);
+			res.end(
+				JSON.stringify({
+					message:
+						"Internal Server Error. Could not delete book from database.",
+				})
+			);
+		}
+	});
+}
+
+// Helper Function
+function parseBody(body) {
+	// concatenate raw data into a single buffer string
+	const parsedBody = Buffer.concat(body).toString();
+	// parse the buffer string into a JSON object
+	return JSON.parse(parsedBody);
+}
 
 const server = http.createServer(requestHandler);
 
