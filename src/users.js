@@ -66,8 +66,47 @@ function createUser(req, res) {
 }
 
 //  AuthenticateUser - POST
+function authenticate(req, res, roles) {
+	return new Promise((resolve, reject) => {
+		// get user details
+		const body = [];
+
+		req.on("data", (chunk) => {
+			body.push(chunk);
+		});
+
+		req.on("end", () => {
+			const userDetails = parseBody(body);
+
+			if (!userDetails) {
+				res.writeHead(401);
+				reject("Please enter your username and password");
+			}
+
+			// validate username and password
+			const userIndex = usersDb.findIndex(
+				(user) =>
+					user.username === userDetails.username ||
+					user.email === userDetails.email
+			);
+			const foundUser = usersDb[userIndex];
+
+			if (userIndex === -1 || foundUser.password !== userDetails.password) {
+				reject("Invalid username/email or password");
+			}
+
+      // validate access level
+			if (!roles.includes(userDetails.role)) {
+				reject("You do not have the required role to access this resource");
+			}
+
+			resolve(userDetails);
+		});
+	});
+}
 
 module.exports = {
 	createUser,
 	getAllUsers,
+	authenticate,
 };

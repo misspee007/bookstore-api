@@ -1,10 +1,10 @@
 const fsPromises = require("fs/promises");
-const fs = require("fs");
+const { readFileSync } = require("fs");
 const path = require("path");
 const { parseBody } = require("./utils");
 
 const pathToBooksDb = path.join(process.cwd(), "db", "books.json");
-const booksDb = JSON.parse(fs.readFileSync(pathToBooksDb, "utf8"));
+const booksDb = JSON.parse(readFileSync(pathToBooksDb, "utf8"));
 
 async function getAllBooks(req, res) {
 	try {

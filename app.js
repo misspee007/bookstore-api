@@ -1,12 +1,25 @@
 const http = require("http");
 const { getAllBooks, addBook, updateBook, deleteBook } = require("./src/books");
-const { createUser, getAllUsers } = require("./src/users");
+const { createUser, getAllUsers, authenticate } = require("./src/users");
 
 function requestHandler(req, res) {
+	res.setHeader("Content-Type", "application/json");
+
 	// Book routes
 	if (req.url === "/books" && req.method === "GET") {
 		// Get all books => GET
-		getAllBooks(req, res);
+		authenticate(req, res, ["admin", "reader"])
+			.then(() => {
+				getAllBooks(req, res);
+			})
+			.catch((err) => {
+				res.statusCode = 401;
+				res.end(
+					JSON.stringify({
+						error: err,
+					})
+				);
+			});
 	} else if (req.url === "/books" && req.method === "POST") {
 		// Add a book => POST
 		addBook(req, res);
@@ -17,8 +30,19 @@ function requestHandler(req, res) {
 		// Delete book => DELETE
 		deleteBook(req, res);
 	} else if (req.url === "/users" && req.method === "GET") {
-		getAllUsers(req, res);
-  } else if (req.url === "/users/register" && req.method === "POST") {
+		authenticate(req, res, ["admin"])
+			.then(() => {
+				getAllUsers(req, res);
+			})
+			.catch((err) => {
+				res.statusCode = 401;
+				res.end(
+					JSON.stringify({
+						error: err,
+					})
+				);
+			});
+	} else if (req.url === "/users/register" && req.method === "POST") {
 		createUser(req, res);
 	} else {
 		res.statusCode = 404;
