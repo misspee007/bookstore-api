@@ -1,164 +1,90 @@
 const http = require("http");
-const fsPromises = require("fs/promises");
-const fs = require("fs");
-const path = require("path");
-const { error } = require("console");
-
-const pathToBooksDb = path.join(__dirname, "db", "books.json");
-
-const booksDb = JSON.parse(fs.readFileSync(pathToBooksDb, "utf8"));
+const { getAllBooks, addBook, updateBook, deleteBook } = require("./src/books");
+const { createUser, getAllUsers, authenticate } = require("./src/users");
 
 function requestHandler(req, res) {
+	res.setHeader("Content-Type", "application/json");
+  //Configure CORS
+  res.setHeader('Access-Control-Allow-Origin', '*');
+
+	// Book routes
 	if (req.url === "/books" && req.method === "GET") {
 		// Get all books => GET
-		getAllBooks(req, res);
+		authenticate(req, res, ["admin", "reader"])
+			.then(() => {
+				getAllBooks(req, res);
+			})
+			.catch((err) => {
+				res.statusCode = 401;
+				res.end(
+					JSON.stringify({
+						error: err,
+					})
+				);
+			});
 	} else if (req.url === "/books" && req.method === "POST") {
 		// Add a book => POST
-		addBook(req, res);
+		authenticate(req, res, ["admin"])
+			.then(() => {
+				addBook(req, res);
+			})
+			.catch((err) => {
+				res.statusCode = 401;
+				res.end(
+					JSON.stringify({
+						error: err,
+					})
+				);
+			});
 	} else if (req.url === "/books" && req.method === "PUT") {
 		// Update book => PUT
-		updateBook(req, res);
+    authenticate(req, res, ["admin"])
+			.then(() => {
+				updateBook(req, res);
+			})
+			.catch((err) => {
+				res.statusCode = 401;
+				res.end(
+					JSON.stringify({
+						error: err,
+					})
+				);
+			});
 	} else if (req.url === "/books" && req.method === "DELETE") {
 		// Delete book => DELETE
-		deleteBook(req, res);
+		authenticate(req, res, ["admin"])
+			.then(() => {
+				deleteBook(req, res);
+			})
+			.catch((err) => {
+				res.statusCode = 401;
+				res.end(
+					JSON.stringify({
+						error: err,
+					})
+				);
+			});
+	} else if (req.url === "/users" && req.method === "GET") {
+		authenticate(req, res, ["admin"])
+			.then(() => {
+				getAllUsers(req, res);
+			})
+			.catch((err) => {
+				res.statusCode = 401;
+				res.end(
+					JSON.stringify({
+						error: err,
+					})
+				);
+			});
+	} else if (req.url === "/users/register" && req.method === "POST") {
+		createUser(req, res);
 	} else {
 		res.statusCode = 404;
 		res.end("Not Found");
 	}
 	// LoanOut => POST
 	// Return => POST
-}
-
-async function getAllBooks(req, res) {
-	try {
-		const books = await fsPromises.readFile(pathToBooksDb, "utf8");
-		res.writeHead(200);
-		res.end(books);
-	} catch (error) {
-		console.log(error);
-	}
-}
-
-function addBook(req, res) {
-	const body = [];
-	req.on("data", (chunk) => {
-		body.push(chunk);
-	});
-
-	req.on("end", async () => {
-		try {
-			let newBook = parseBody(body);
-
-			// get ID of last book in the database
-			const lastBook = booksDb[booksDb.length - 1];
-			const lastBookId = lastBook.id;
-			newBook.id = lastBookId + 1;
-
-			//save to db
-			booksDb.push(newBook);
-
-			await fsPromises.writeFile(pathToBooksDb, JSON.stringify(booksDb));
-
-			res.writeHead(201);
-			res.end(JSON.stringify(newBook));
-		} catch (err) {
-			console.log(err);
-			res.writeHead(500);
-			res.end(
-				JSON.stringify({
-					message: "Internal Server Error. Could not save book to database.",
-				})
-			);
-		}
-	});
-}
-
-function updateBook(req, res) {
-	const body = [];
-	req.on("data", (chunk) => {
-		body.push(chunk);
-	});
-
-	req.on("end", async () => {
-		try {
-			const bookUpdate = parseBody(body);
-
-			// get book by id
-			const updatedBookId = booksDb.findIndex(
-				(book) => book.id === bookUpdate.id
-			);
-
-			if (updatedBookId === -1) {
-				res.writeHead(400);
-				res.end("Book not found. Please enter a valid id");
-				return;
-			}
-
-			// update book
-			const updatedBook = { ...booksDb[updatedBookId], ...bookUpdate };
-			booksDb[updatedBookId] = updatedBook;
-
-			// save updated book to db
-			await fsPromises.writeFile(pathToBooksDb, JSON.stringify(booksDb));
-
-			res.writeHead(201);
-			res.end(JSON.stringify(updatedBook));
-		} catch (err) {
-			console.log(err);
-			res.writeHead(500);
-			res.end(
-				JSON.stringify({
-					message: "Internal Server Error. Could not save book to database.",
-				})
-			);
-		}
-	});
-}
-
-function deleteBook(req, res) {
-	let body = [];
-	req.on("data", (chunk) => {
-		body.push(chunk);
-	});
-
-	req.on("end", async () => {
-		try {
-			// get book by id
-			const bookId = parseBody(body);
-			const bookToDelete = booksDb.findIndex((book) => book.id === bookId.id);
-
-			if (bookToDelete === -1) {
-				res.writeHead(400);
-				res.end("Book not found. Please enter a valid id");
-				return;
-			}
-
-			// delete from db
-			booksDb.splice(bookToDelete, 1);
-
-			// update db
-			await fsPromises.writeFile(pathToBooksDb, JSON.stringify(booksDb));
-			res.writeHead(201);
-			res.end(`Deleted successfully: ${booksDb[bookToDelete].title}`);
-		} catch (err) {
-			console.log(err);
-			res.writeHead(500);
-			res.end(
-				JSON.stringify({
-					message:
-						"Internal Server Error. Could not delete book from database.",
-				})
-			);
-		}
-	});
-}
-
-// Helper Function
-function parseBody(body) {
-	// concatenate raw data into a single buffer string
-	const parsedBody = Buffer.concat(body).toString();
-	// parse the buffer string into a JSON object
-	return JSON.parse(parsedBody);
 }
 
 const server = http.createServer(requestHandler);
