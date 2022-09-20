@@ -1,6 +1,6 @@
 const http = require("http");
 const { getAllBooks, addBook, updateBook, deleteBook } = require("./src/books");
-const { createUser } = require("./src/users");
+const { createUser, getAllUsers } = require("./src/users");
 
 function requestHandler(req, res) {
 	// Book routes
@@ -16,7 +16,9 @@ function requestHandler(req, res) {
 	} else if (req.url === "/books" && req.method === "DELETE") {
 		// Delete book => DELETE
 		deleteBook(req, res);
-	} else if (req.url === "/users/register" && req.method === "POST") {
+	} else if (req.url === "/users" && req.method === "GET") {
+		getAllUsers(req, res);
+  } else if (req.url === "/users/register" && req.method === "POST") {
 		createUser(req, res);
 	} else {
 		res.statusCode = 404;

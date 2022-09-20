@@ -1,9 +1,22 @@
 const fs = require("fs");
+const { readFile } = require("fs/promises");
+
 const path = require("path");
 const { parseBody } = require("./utils");
 
 const usersDbPath = path.join(process.cwd(), "db", "users.json");
 const usersDb = JSON.parse(fs.readFileSync(usersDbPath, "utf8"));
+
+//  getAllUsers - GET
+async function getAllUsers(req, res) {
+	try {
+		const users = await readFile(usersDbPath, "utf8");
+		res.writeHead(200);
+		res.end(users);
+	} catch (error) {
+		console.log(error);
+	}
+}
 
 //  CreateUser - POST
 function createUser(req, res) {
@@ -51,9 +64,10 @@ function createUser(req, res) {
 		}
 	});
 }
+
 //  AuthenticateUser - POST
-//  getAllUsers - GET
 
 module.exports = {
 	createUser,
+	getAllUsers,
 };
