@@ -4,6 +4,8 @@ const { createUser, getAllUsers, authenticate } = require("./src/users");
 
 function requestHandler(req, res) {
 	res.setHeader("Content-Type", "application/json");
+  //Configure CORS
+  res.setHeader('Access-Control-Allow-Origin', '*');
 
 	// Book routes
 	if (req.url === "/books" && req.method === "GET") {
