@@ -14,6 +14,6 @@ Establish the following routes using the specified method:
     - Update - PUT
 
 ## Tools
-- Vanilla nodeJs(no framework)
+- NodeJs
 - Jest
 - Supertest
