@@ -95,8 +95,8 @@ function authenticate(req, res, roles) {
 				reject("Invalid username/email or password");
 			}
 
-      // validate access level
-			if (!roles.includes(userDetails.role)) {
+			// validate access level
+			if (!roles.includes(foundUser.role)) {
 				reject("You do not have the required role to access this resource");
 			}
 

@@ -22,13 +22,46 @@ function requestHandler(req, res) {
 			});
 	} else if (req.url === "/books" && req.method === "POST") {
 		// Add a book => POST
-		addBook(req, res);
+		authenticate(req, res, ["admin"])
+			.then(() => {
+				addBook(req, res);
+			})
+			.catch((err) => {
+				res.statusCode = 401;
+				res.end(
+					JSON.stringify({
+						error: err,
+					})
+				);
+			});
 	} else if (req.url === "/books" && req.method === "PUT") {
 		// Update book => PUT
-		updateBook(req, res);
+    authenticate(req, res, ["admin"])
+			.then(() => {
+				updateBook(req, res);
+			})
+			.catch((err) => {
+				res.statusCode = 401;
+				res.end(
+					JSON.stringify({
+						error: err,
+					})
+				);
+			});
 	} else if (req.url === "/books" && req.method === "DELETE") {
 		// Delete book => DELETE
-		deleteBook(req, res);
+		authenticate(req, res, ["admin"])
+			.then(() => {
+				deleteBook(req, res);
+			})
+			.catch((err) => {
+				res.statusCode = 401;
+				res.end(
+					JSON.stringify({
+						error: err,
+					})
+				);
+			});
 	} else if (req.url === "/users" && req.method === "GET") {
 		authenticate(req, res, ["admin"])
 			.then(() => {
