@@ -2,20 +2,15 @@ const fs = require("fs");
 const { readFile } = require("fs/promises");
 
 const path = require("path");
-const { parseBody } = require("./utils");
+// const { parseBody } = require("./utils");
 
 const usersDbPath = path.join(process.cwd(), "db", "users.json");
 const usersDb = JSON.parse(fs.readFileSync(usersDbPath, "utf8"));
 
 //  getAllUsers - GET
-async function getAllUsers(req, res) {
-	try {
-		const users = await readFile(usersDbPath, "utf8");
-		res.writeHead(200);
-		res.end(users);
-	} catch (error) {
-		console.log(error);
-	}
+function getAllUsers(req, res) {
+	res.writeHead(200);
+	res.end(usersDb);
 }
 
 //  CreateUser - POST
@@ -66,43 +61,44 @@ function createUser(req, res) {
 }
 
 //  AuthenticateUser - POST
-function authenticate(req, res, roles) {
-	return new Promise((resolve, reject) => {
-		// get user details
-		const body = [];
+async function authenticate(req, res, roles) {
+	// return new Promise((resolve, reject) => {
+	// get user details
+	try {
+		const userDetails = await req.body;
+    
 
-		req.on("data", (chunk) => {
-			body.push(chunk);
-		});
-
-		req.on("end", () => {
-			const userDetails = parseBody(body);
-
-			if (!userDetails) {
-				res.writeHead(401);
-				reject("Please enter your username and password");
-			}
-
+		if (!userDetails) {
+			return res
+				.status(401)
+				.json({ message: "Please enter your username and password" });
+		} else {
 			// validate username and password
 			const userIndex = usersDb.findIndex(
 				(user) =>
 					user.username === userDetails.username ||
 					user.email === userDetails.email
 			);
-			const foundUser = usersDb[userIndex];
+		}
+		const foundUser = usersDb[userIndex];
 
-			if (userIndex === -1 || foundUser.password !== userDetails.password) {
-				reject("Invalid username/email or password");
-			}
-
+		if (userIndex === -1 || foundUser.password !== userDetails.password) {
+			return res
+				.status(401)
+				.json({ message: "Invalid username/email or password" });
+		} else {
 			// validate access level
 			if (!roles.includes(foundUser.role)) {
-				reject("You do not have the required role to access this resource");
+				return res.status(401).json({
+					message: "You do not have the required role to access this resource",
+				});
 			}
-
-			resolve(userDetails);
-		});
-	});
+		}
+		return userDetails;
+	} catch (err) {
+		console.log(err);
+	}
+	// });
 }
 
 module.exports = {
